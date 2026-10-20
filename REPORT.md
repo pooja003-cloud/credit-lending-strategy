@@ -21,6 +21,17 @@ Fintech lenders say they can safely approve borrowers that traditional banks tur
 - **No class weighting.** Only 6.7% of borrowers default, and the common "fix" (`scale_pos_weight`) inflates every predicted probability. A lender pricing loans needs probabilities that match reality, so the weighted model is shown only as a comparison.
 - **Decisions, not just metrics.** A lender doesn't act on AUC; it acts on an approval cut-off. So the models are compared on approval rate, default rate and profit.
 
+## Related work
+
+The project started from four papers assigned in my Financial Data and FinTech course. Each one shaped a design choice:
+
+| Paper | How it shaped this project |
+|---|---|
+| Lessmann, Baesens, Seow & Thomas (2015), [Benchmarking state-of-the-art classification algorithms for credit scoring: An update of research](https://ideas.repec.org/a/eee/ejores/v247y2015i1p124-136.html), *European Journal of Operational Research* 247 | Benchmarking a machine learning model against a logistic regression baseline on the same borrowers |
+| Dumitrescu, Hué, Hurlin & Tokpavi (2022), [Machine learning for credit scoring: Improving logistic regression with non-linear decision-tree effects](https://hal-univ-orleans.archives-ouvertes.fr/LEO/hal-03331114v1), *European Journal of Operational Research* | Capturing non-linear effects without losing interpretability: the monotone constraints |
+| Fuster, Goldsmith-Pinkham, Ramadorai & Walther (2022), [Predictably Unequal? The Effects of Machine Learning on Credit Markets](https://sfi.ch/de/publications/predictably-unequal-the-effects-of-machine-learning-on-credit-markets.), *Journal of Finance* | Asking who gets approved differently, not just whether accuracy improves: the swap set and the fair-lending caveat |
+| Verbraken, Bravo, Weber & Baesens (2014), [Development and application of consumer credit scoring models using profit-based classification measures](https://ideas.repec.org/a/eee/ejores/v238y2014i2p505-513.html), *European Journal of Operational Research* 238 | Judging models and choosing cut-offs by profit, not AUC alone |
+
 ## Results (30,000 hold-out borrowers)
 
 ### Head-to-head

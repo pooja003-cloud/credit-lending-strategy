@@ -4,7 +4,7 @@ Fintech lenders say they can safely approve more borrowers than traditional bank
 
 ## Why this project
 
-My Financial Data and FinTech course (MS in Quantitative Finance) covered how fintech lenders use data and machine learning to approve borrowers that banks turn away, and I built a simple comparison for it. Here I expanded it to test the claim properly: not just whether a more flexible model is more accurate, but whether it changes who gets approved, and what that is worth.
+My Financial Data and FinTech course (MS in Quantitative Finance) covered how fintech lenders use data and machine learning to approve borrowers that banks turn away, and I built a simple comparison for it, guided by four papers from the course (listed in the [full report](REPORT.md#related-work)). Here I expanded it to test the claim properly: not just whether a more flexible model is more accurate, but whether it changes who gets approved, and what that is worth.
 
 ## What I set out to do
 
