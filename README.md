@@ -19,7 +19,7 @@ Fintech lenders say they can safely approve more borrowers than traditional bank
 
 <p align="center"><img src="outputs/approval_vs_default.png" width="55%" alt="Default rate among approved borrowers by approval rate, scorecard vs XGBoost"></p>
 
-**How it connects.** It challenges my [credit risk scorecard](https://github.com/pooja003-cloud/credit-risk-scorecard), and my [validation](https://github.com/pooja003-cloud/credit-model-validation) project re-tests its results.
+**How it connects.** This expands a smaller project from my Financial Data and FinTech course (MS in Quantitative Finance). It challenges my [credit risk scorecard](https://github.com/pooja003-cloud/credit-risk-scorecard), and my [validation](https://github.com/pooja003-cloud/credit-model-validation) project re-tests its results.
 
 **Run it.** Download `cs-training.csv` from [Kaggle's Give Me Some Credit](https://www.kaggle.com/c/GiveMeSomeCredit/data), save it as `data/credit_data.csv`, then run `pip install -r requirements.txt` and `python strategy.py`.
 
