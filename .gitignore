@@ -1,0 +1,12 @@
+# Data (Kaggle rules: do not redistribute)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

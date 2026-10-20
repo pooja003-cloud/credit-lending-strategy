@@ -1,0 +1,13 @@
+Rank,Feature,Mean_abs_SHAP
+1,RevolvingUtilizationOfUnsecuredLines,0.74935085
+2,NumberOfTime30-59DaysPastDueNotWorse,0.37049764
+3,NumberOfTimes90DaysLate,0.3121926
+4,age,0.26287088
+5,NumberOfTime60-89DaysPastDueNotWorse,0.18760876
+6,NumberOfOpenCreditLinesAndLoans,0.16452074
+7,MonthlyIncome,0.15129562
+8,DebtRatio,0.14905292
+9,NumberRealEstateLoansOrLines,0.11130289
+10,NumberOfDependents,0.038559664
+11,IncomeMissingFlag,0.012764926
+12,PastDueCodeFlag,0.0

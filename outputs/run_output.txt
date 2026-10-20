@@ -1,0 +1,110 @@
+==============================================================================
+CREDIT LENDING STRATEGY - SCORECARD vs XGBOOST
+==============================================================================
+Train: 120,000 borrowers | Test: 30,000 | Default rate: 6.68% (same split as project 1)
+
+==============================================================================
+HEAD-TO-HEAD (30,000 hold-out borrowers)
+==============================================================================
+Model                        AUC    Gini      KS    Avg PD    Actual
+------------------------------------------------------------------------------
+Scorecard                  0.861   0.721   0.557     6.65%     6.68%
+XGBoost                    0.868   0.735   0.579     6.68%     6.68%
+XGBoost unconstrained      0.870   0.739   0.583     6.69%     6.68%
+XGBoost weighted           0.868   0.736   0.579    31.74%     6.68%
+------------------------------------------------------------------------------
+AUC lift, XGBoost over scorecard: +0.007 (+0.8% relative)
+Monotone constraints cost 0.002 AUC (unconstrained 0.870)
+scale_pos_weight = 14.0: AUC 0.868, but average PD 31.7% vs 6.7% actual (4.7x too high)
+
+==============================================================================
+CALIBRATION BY DECILE - predicted PD / actual default rate (1.00 = perfect)
+==============================================================================
+Decile    Actual rate          Scorecard            XGBoost   XGBoost weighted
+------------------------------------------------------------------------------
+1               0.40%               2.54               1.24              10.12
+2               0.60%               2.42               1.29              21.41
+3               0.63%               2.01               1.66              13.00
+4               1.33%               1.31               1.03              12.22
+5               1.63%               1.30               1.12              10.66
+6               2.53%               1.11               1.06               9.89
+7               4.03%               0.92               1.00               9.11
+8               7.03%               0.91               0.88               7.13
+9              11.73%               0.94               0.89               5.20
+10             36.90%               0.94               1.03               2.38
+------------------------------------------------------------------------------
+Actual rate shown for XGBoost's deciles; each model's ratio uses its own deciles.
+
+==============================================================================
+LENDING STRATEGY - approve the lowest-risk applicants first (per 100,000 applicants)
+==============================================================================
+Assumptions: $10,000 limit, APR 20%, cost of funds 6%, LGD 80%, CCF 50%, 2-year horizon
+Approve                Default rate               Profit ($ millions)
+             Scorecard      XGBoost        Scorecard          XGBoost
+------------------------------------------------------------------------------
+ 50%             1.01%        0.92%             7.54             9.04
+ 60%             1.29%        1.19%            12.26            15.60
+ 70%             1.77%        1.60%            19.73            24.55
+ 80%             2.43%        2.27%            31.46            35.14
+ 85%             2.87%        2.71%            37.96            41.06
+ 90%             3.38%        3.33%            44.25            45.07
+ 95%             4.52%        4.48%            44.04            44.42
+100%             6.68%        6.68%            32.27            32.27
+------------------------------------------------------------------------------
+
+Profit-maximising cut-off:
+  Scorecard  approve 92% (PD cut-off 16.8%) | default rate 3.70% | profit $45.49M
+  XGBoost    approve 91% (PD cut-off 17.6%) | default rate 3.48% | profit $45.52M
+  Extra profit with XGBoost: $0.03M per 100,000 applicants (+0.1%)
+
+==============================================================================
+RISK APPETITE - most applicants each model can approve at a target default rate
+==============================================================================
+Target              Approval rate   Extra approvals        Profit ($ millions)
+default     Scorecard     XGBoost       per 100,000     Scorecard      XGBoost
+------------------------------------------------------------------------------
+1.5%            66.3%       68.0%            +1,763         16.77        22.58
+2.0%            73.6%       77.1%            +3,477         23.47        32.19
+2.5%            81.1%       82.6%            +1,487         33.07        38.11
+3.0%            86.5%       87.6%            +1,110         40.06        43.37
+------------------------------------------------------------------------------
+
+==============================================================================
+SWAP SET - same approval rate, applicants the two models decide differently
+==============================================================================
+Approve    Borrowers                Default rate           Credit used (avg)
+             in each  XGBoost-only  Scorecard-only  XGBoost-only  Scorecard-only
+------------------------------------------------------------------------------
+ 70%             976         3.07%           6.86%           73%             25%
+ 80%             835         5.99%          10.42%           86%             45%
+ 90%             330        15.15%          19.70%           79%             60%
+------------------------------------------------------------------------------
+XGBoost-only = approved by XGBoost but declined by the scorecard, and vice versa.
+
+Profile at 70% approval (medians; late payment = share of group):
+Group             Default rate  Credit used  Any late payment   Age    Income
+XGBoost-only             3.07%          75%                9%    57     7,117
+Scorecard-only           6.86%          21%               49%    49     4,500
+
+==============================================================================
+XGBOOST RISK DRIVERS (mean absolute SHAP value, log-odds)
+==============================================================================
+1   RevolvingUtilizationOfUnsecuredLines         0.749
+2   NumberOfTime30-59DaysPastDueNotWorse         0.370
+3   NumberOfTimes90DaysLate                      0.312
+4   age                                          0.263
+5   NumberOfTime60-89DaysPastDueNotWorse         0.188
+6   NumberOfOpenCreditLinesAndLoans              0.165
+7   MonthlyIncome                                0.151
+8   DebtRatio                                    0.149
+9   NumberRealEstateLoansOrLines                 0.111
+10  NumberOfDependents                           0.039
+11  IncomeMissingFlag                            0.013
+12  PastDueCodeFlag                              0.000
+
+Example declined applicant (median PD among XGBoost declines at its best cut-off): PD 34.8%, score 479 (scorecard PD 28.6%)
+   Reason 1: Payments 90+ days late (3)
+   Reason 2: Payments 30-59 days late (2)
+   Reason 3: Age (31)
+
+Saved to outputs/: xgboost_model.json, strategy_curve.csv, xgboost_drivers.csv, risk_appetite.csv, swap_set.csv, approval_vs_default.png, profit_by_cutoff.png, xgboost_drivers.png
