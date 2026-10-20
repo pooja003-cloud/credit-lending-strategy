@@ -1,8 +1,15 @@
 # Credit Lending Strategy — Scorecard vs XGBoost
 
-Fintech lenders say they can safely approve borrowers that traditional banks turn away. This project tests that claim. It challenges the bank-style logistic scorecard from my [credit-risk-scorecard](https://github.com/pooja003-cloud/credit-risk-scorecard) project with an XGBoost model on **exactly the same borrowers**, then turns both models into lending decisions: whom to approve, how many defaults that brings, and how much profit it makes.
+Fintech lenders say they can safely approve borrowers that traditional banks turn away. This project tests a version of that claim, among borrowers who all received credit. It challenges the bank-style logistic scorecard from my [credit-risk-scorecard](https://github.com/pooja003-cloud/credit-risk-scorecard) project with an XGBoost model on **exactly the same borrowers**, then turns both models into lending decisions: whom to approve, how many defaults that brings, and how much profit it makes.
 
-**Short answer:** XGBoost ranks risk slightly better (AUC 0.861 → 0.868) and its probabilities are better calibrated. At the profit-maximizing cut-off the two models are tied, but **a selective lender gains a lot**: at a 2% target default rate, XGBoost approves 3,477 more applicants per 100,000 and earns about 37% more profit. The borrowers it approves differently are a recognizable group: heavy credit users with clean payment histories.
+**Short answer:** XGBoost ranks risk slightly better (AUC 0.861 → 0.868) and its probabilities are better calibrated. At the profit-maximizing cut-off the two models are tied. For a selective lender, **XGBoost approves more applicants at the same default rate**: 3,477 more per 100,000 at a 2% target. How much extra profit that brings depends mostly on how much approved borrowers borrow: +37% under this project's assumption that each borrower keeps drawing their current utilization, but about +5% if everyone draws the same share of their limit. The borrowers it approves differently are a recognizable group: heavy credit users with clean payment histories.
+
+> **Independent review.** My [credit-model-validation](https://github.com/pooja003-cloud/credit-model-validation) project re-tested these results and corrected some of them:
+> - **Out of sample**, XGBoost approves **+2,907 more applicants per 100,000** at a 2% target (this README: +3,477), with profit uplift +33.6% (this README: +37%).
+> - **About seven-eighths of the profit uplift depends on the drawn-balance assumption.** With a flat drawn balance, the uplift is +4.7%, which is simply the extra approvals.
+> - **At the profit-maximizing cut-off, XGBoost is −0.4%, not +0.1%.** This project searched cut-offs in 1% steps, which slightly under-measured the scorecard's best profit.
+>
+> The figures below are this project's original results; the validation report explains each change.
 
 ## Why this approach
 
@@ -60,7 +67,7 @@ Approve the lowest-risk applicants first. Profit is the realized two-year result
 | 90% | 3.38% | 3.33% | $44.25M | $45.07M |
 | 100% | 6.68% | 6.68% | $32.27M | $32.27M |
 
-**Profit-maximizing cut-off:** the scorecard approves 92% (default rate 3.70%, $45.49M); XGBoost approves 91% (default rate 3.48%, $45.52M). **At the optimum, the difference is just +0.1%.** Under these assumptions almost every borrower is profitable, so both models approve nearly everyone and pick almost the same people.
+**Profit-maximizing cut-off:** the scorecard approves 92% (default rate 3.70%, $45.49M); XGBoost approves 91% (default rate 3.48%, $45.52M). **At the optimum, there's no meaningful difference:** +0.1% here on 1% steps, −0.4% when the validation searches every borrower. Under these assumptions almost every borrower is profitable, so both models approve nearly everyone and pick almost the same people.
 
 ### Risk appetite: where XGBoost earns its keep
 
@@ -73,13 +80,13 @@ Most lenders are more selective than the profit-maximizing point, to protect cap
 | 2.5% | 81.1% | 82.6% | +1,487 | $33.07M | $38.11M |
 | 3.0% | 86.5% | 87.6% | +1,110 | $40.06M | $43.37M |
 
-At the same default rate, XGBoost approves more applicants *and* earns $3–9M more per 100,000 applicants.
+At the same default rate, XGBoost approves more applicants *and* earns $3–9M more per 100,000 applicants under this project's revenue assumption. The extra approvals are the robust part; most of the extra profit comes from XGBoost approving borrowers who carry larger balances (see *Assumptions*).
 
 ### Who gets approved differently?
 
 At the same approval rate, compare the applicants only one model approves:
 
-| Approve | Borrowers in each group | Default rate: XGBoost-only | Default rate: Scorecard-only | Credit used: XGBoost-only | Credit used: Scorecard-only |
+| Approve | Borrowers in each group | Default rate: XGBoost-only | Default rate: Scorecard-only | Credit used (mean): XGBoost-only | Credit used (mean): Scorecard-only |
 |---|---|---|---|---|---|
 | 70% | 976 | 3.07% | 6.86% | 73% | 25% |
 | 80% | 835 | 5.99% | 10.42% | 86% | 45% |
@@ -92,7 +99,7 @@ At 70% approval:
 | XGBoost | 3.07% | 75% | 9% | 57 | $7,117 |
 | Scorecard | 6.86% | 21% | 49% | 49 | $4,500 |
 
-**This is the fintech claim, measured.** The scorecard adds risk factors up independently, so heavy credit use alone pushes clean, older, higher-income borrowers over the line, while it approves light credit users even though half of them have missed payments. XGBoost weighs the factors together. The borrowers it adds default at less than half the rate of those it drops, and because they use more of their credit, they also generate more interest revenue.
+**What the fintech claim looks like among approved borrowers.** Everyone in this dataset already received credit, so this can't show how applicants a bank actually rejected would perform (see *Limitations*). Within these borrowers, the scorecard adds risk factors up independently, so heavy credit use alone pushes clean, older, higher-income borrowers over the line, while it approves light credit users even though half of them have missed payments. XGBoost weighs the factors together. The borrowers it adds default at less than half the rate of those it drops. Because they use more of their credit, they also generate more interest revenue under this project's assumptions, which is where most of the profit difference comes from.
 
 ### Explaining XGBoost decisions
 
@@ -102,11 +109,11 @@ XGBoost computes SHAP values natively, splitting each prediction into contributi
   <img src="outputs/xgboost_drivers.png" width="60%" alt="XGBoost risk drivers by mean absolute SHAP value">
 </p>
 
-Utilization and late payments dominate, as in the scorecard. **Example decline** (a real hold-out applicant with the median PD among XGBoost declines): PD 34.8%, score 479. Reasons: payments 90+ days late (3 times), payments 30–59 days late (2 times), age (31).
+Utilization and late payments dominate, as in the scorecard. **Example decline** (a real hold-out applicant with the median PD among XGBoost declines): PD 34.8%, score 479. Reasons: payments 90+ days late (3 times), payments 30–59 days late (2 times), age (31). Age is a permitted factor under Regulation B for applicants under 62, but it's a sensitive one: the validation shows XGBoost weighs youth much more heavily than the scorecard, so "age" appears as a reason more often for young applicants.
 
 ## Conclusion
 
-XGBoost is a better model here: slightly better ranking, much better calibration, and explainable once constrained. Whether that's worth the extra complexity depends on the lender. **For a selective lender, it adds roughly 1,000–3,500 approvals and $3–9M profit per 100,000 applicants at the same default rate.** For a lender already approving almost everyone, the gain is negligible, and the simpler, fully transparent scorecard may still be the better choice.
+XGBoost is a better model here: slightly better ranking, much better calibration, and explainable once constrained. Whether that's worth the extra complexity depends on the lender. **For a selective lender, it adds roughly 1,000–3,500 approvals per 100,000 applicants at the same default rate.** The extra profit ranges from about +5% to +37%, depending on how much those borrowers draw on their credit. For a lender already approving almost everyone, the gain is negligible, and the simpler, fully transparent scorecard may still be the better choice.
 
 ## Assumptions (illustrative)
 
@@ -115,7 +122,7 @@ The same credit card product as project 1's expected-loss estimate:
 - **Credit limit:** $10,000 per approved borrower
 - **Revenue:** good borrowers pay 20% APR on their drawn balance, minus 6% cost of funds and servicing, for two years
 - **Loss:** defaulting borrowers lose 80% (LGD) of their exposure, where exposure = drawn balance + 50% of the unused limit
-- **Drawn balance:** each borrower's revolving utilization (capped at 100%) × the limit
+- **Drawn balance:** each borrower's revolving utilization (capped at 100%) × the limit. **This is the assumption that drives the profit results.** Because revenue rises with utilization, and XGBoost approves heavier credit users, it earns more partly by construction. With a flat drawn balance for everyone, the validation finds the profit uplift at a 2% target falls from +37% to +4.7%, the same as the increase in approvals.
 
 ## Method
 
@@ -167,7 +174,8 @@ The dataset is not included in this repository, in line with Kaggle's competitio
 
 - **No reject inference.** The dataset only contains people who already received credit. The comparison shows which model better ranks *these* borrowers; it can't show how applicants that a bank actually rejected would have performed. Real fintechs address this with reject inference or small controlled test approvals.
 - **Cut-offs are chosen and evaluated on the same hold-out set.** This flatters both models equally, so the comparison is fair, but absolute profits are slightly optimistic. A production analysis would pick cut-offs on a separate validation set.
-- **Profit depends on the assumptions.** The 91–92% optimal approval rate reflects generous margins and no acquisition, marketing or operating costs beyond funding. Tighter margins would move the optimum lower, toward the range where XGBoost's advantage is largest.
+- **Profit depends on the drawn-balance assumption most of all.** Interest revenue is tied to each borrower's current utilization, which assumes today's balance predicts the balance they'll carry after approval. That is plausible for credit cards but not tested here; account-level balance histories would be needed.
+- **Profit depends on the other assumptions too.** The 91–92% optimal approval rate reflects generous margins and no acquisition, marketing or operating costs beyond funding. Tighter margins would move the optimum lower, toward the range where XGBoost's advantage is largest.
 - **Small groups are noisy.** The safest deciles have about 12–19 defaults each, and the swap groups have a few hundred to a thousand borrowers, so differences of a few tenths of a percentage point aren't meaningful.
 - **Fair-lending testing not done.** Monotone constraints keep factors explainable, but a production model would also be tested for disparate impact across protected groups.
 - **The past-due code flag has no effect in XGBoost** (SHAP ≈ 0), because the tree uses the missing past-due values directly.
